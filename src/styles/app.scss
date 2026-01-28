@@ -1,0 +1,534 @@
+@use './fonts';
+@use './globals';
+@use './media' as *;
+
+.app {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.main {
+  position: relative;
+  width: 100%;
+  max-width: 1440px;
+  min-height: 100dvh;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  border-left: 1px solid rgba(66, 86, 122, 0.3);
+  border-right: 1px solid rgba(66, 86, 122, 0.3);
+
+  margin: 0 auto;
+
+  @media (max-width: $lg) {
+    gap: 15px;
+  }
+
+  &__header {
+    display: flex;
+    gap: 80px;
+
+    padding-top: 170px;
+
+    @media (max-width: $xxl) {
+      padding-top: 40px;
+    }
+
+    @media (max-width: $xl) {
+      padding-top: 20px;
+    }
+  }
+
+  &__title-decor {
+    @media (max-width: $lg) {
+      display: none;
+    }
+  }
+  &__title {
+    font-weight: 700;
+    font-size: 56px;
+    line-height: 120%;
+    white-space: pre-line;
+
+    @media (max-width: $lg) {
+      font-size: 20px;
+      line-height: 120%;
+
+      margin-left: 20px;
+      margin-top: 60px;
+    }
+  }
+
+  &__center {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    @media (max-width: $lg) {
+      flex-direction: column;
+
+      flex-grow: 1;
+
+      position: relative;
+    }
+  }
+
+  &__dates {
+    display: flex;
+    gap: 120px;
+
+    @media (max-width: $lg) {
+      gap: 30px;
+    }
+  }
+
+  &__date {
+    font-weight: 700;
+    font-size: 200px;
+    line-height: 80%;
+    letter-spacing: -0.02em;
+    text-align: center;
+
+    @media (max-width: $xxl) {
+      font-size: 140px;
+    }
+
+    @media (max-width: $xl) {
+      font-size: 120px;
+    }
+
+    @media (max-width: $md) {
+      font-size: 56px;
+    }
+    &--low {
+      color: #5d5fef;
+    }
+
+    &--high {
+      color: #ef5da8;
+    }
+  }
+
+  &__footer {
+    padding: 0 80px;
+    padding-bottom: 100px;
+
+    @media (max-width: $xxxl) {
+      padding-bottom: 30px;
+    }
+
+    @media (max-width: $xxl) {
+      padding-bottom: 20px;
+    }
+
+    @media (max-width: $xl) {
+      padding: 0 20px;
+      padding-bottom: 20px;
+    }
+
+    @media (max-width: $lg) {
+      position: relative;
+
+      padding: 0;
+
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  &__decor {
+    position: absolute;
+
+    background-color: rgba(66, 86, 122, 0.3);
+
+    @media (max-width: $lg) {
+      display: none;
+    }
+
+    &--hor {
+      top: 50%;
+      left: 0;
+
+      width: 100%;
+      height: 1px;
+
+      transform: translateY(-50%);
+    }
+
+    &--ver {
+      top: 0;
+      left: 50%;
+
+      height: 100%;
+      width: 1px;
+
+      transform: translateX(-50%);
+    }
+  }
+
+  &__circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 1000;
+
+    width: 530px;
+    height: 530px;
+
+    border-radius: 50%;
+    border: 1px solid rgba(66, 86, 122, 0.3);
+
+    transform: translate(-50%, -50%);
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+
+    @media (max-width: $lg) {
+      display: none;
+    }
+  }
+
+  &__point {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+    background-color: #42567a;
+    border: 1px solid transparent;
+
+    transform-origin: 50% 50%;
+    transition:
+      width 0.15s ease,
+      height 0.15s ease,
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+
+    cursor: pointer;
+
+    &--orbital {
+      transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
+        translateY(calc(-1 * var(--radius, 265px)))
+        rotate(calc(-1 * var(--angle, 0deg)));
+
+      transition:
+        width 0.15s ease,
+        height 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &:hover {
+      width: 56px;
+      height: 56px;
+
+      background-color: #fff;
+      border-color: #42567a;
+
+      .main__point-id {
+        opacity: 1;
+      }
+
+      .main__point-text {
+        opacity: 1;
+      }
+    }
+
+    &--active {
+      width: 56px;
+      height: 56px;
+
+      background-color: #fff;
+      border-color: #42567a;
+    }
+  }
+
+  &__point-id {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+    transition: opacity 0.15s;
+
+    opacity: 0;
+
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 150%;
+
+    &--active {
+      opacity: 1;
+    }
+  }
+
+  &__point-text {
+    display: block;
+    position: absolute;
+    top: 20px;
+    right: -30px;
+
+    width: 100px;
+
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 150%;
+
+    animation: fadeInText 0.3s ease forwards;
+
+    &--fade {
+      animation: fadeOutText 0.3s ease forwards;
+    }
+  }
+}
+
+@keyframes fadeOutText {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeInText {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.list {
+  animation: fadeInText 0.3s ease forwards;
+
+  &--fade {
+    animation: fadeOutText 0.3s ease forwards;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+
+    height: 135px;
+
+    @media (max-width: $xl) {
+      height: 200px;
+    }
+  }
+
+  &__title {
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 120%;
+    color: #3877ee;
+
+    text-transform: uppercase;
+  }
+
+  &__text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 150%;
+
+    @media (max-width: $xl) {
+      -webkit-line-clamp: 5;
+    }
+
+    @media (max-width: $lg) {
+      -webkit-line-clamp: 4;
+    }
+  }
+}
+
+.slider {
+  position: relative;
+
+  width: 80%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+
+  @media (max-width: $xl) {
+    max-width: unset;
+  }
+
+  @media (max-width: $lg) {
+    width: 100%;
+
+    order: 2;
+  }
+  
+  &__buttons {
+    position: absolute;
+    top: 50%;
+
+    width: 100%;
+
+    @media (max-width: $lg) {
+      display: none;
+    }
+  }
+
+  &__button {
+    position: absolute;
+    z-index: 10;
+
+    box-shadow: 0 0 15px 0 rgba(56, 119, 238, 0.1);
+
+    cursor: pointer;
+    transform: translateY(-50%);
+
+    &--prev {
+      left: -120px;
+      @media (max-width: $xl) {
+        left: -70px;
+      }
+    }
+
+    &--next {
+      right: -120px;
+      @media (max-width: $xl) {
+        right: -70px;
+      }
+
+      svg {
+        transform: rotate(180deg);
+      }
+    }
+  }
+}
+
+.panel {
+  font-weight: 400;
+
+  margin-bottom: 56px;
+
+  @media (max-width: $lg) {
+    z-index: 1000;
+
+    margin-bottom: 20px;
+
+    order: 3;
+  }
+
+  &__nav {
+    @media (max-width: $lg) {
+      margin-left: 20px;
+    }
+  }
+  &__buttons {
+    display: flex;
+    gap: 20px;
+
+    position: relative;
+    z-index: 100;
+
+    margin-top: 20px;
+
+    @media (max-width: $lg) {
+      gap: 8px;
+      margin-top: 10px;
+    }
+  }
+
+  &__button {
+    &--next {
+      svg {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  &__pagination {
+    display: none;
+
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    z-index: 1001;
+
+    width: 30%;
+
+    margin: 0 auto;
+
+    @media (max-width: $lg) {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+  }
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+    background-color: #42567a;
+
+    opacity: 0.4;
+
+    transition: background-color 0.2s ease;
+    
+    cursor: pointer;  
+    
+    padding: 0;
+    &--active {
+      opacity: 1;
+    }
+  }
+}
+
+.mob-ver {
+  display: none;
+  width: calc(100% - 40px);
+  border-bottom: 1px solid #c7cdd9;
+  margin: 0 auto 20px;
+
+  &--fade {
+    animation: fadeOutText 0.3s ease forwards;
+  }
+
+  @media (max-width: $lg) {
+    display: block;
+
+    order: 1;
+  }
+
+  &__title {
+    margin-top: auto;
+    margin-bottom: 30px;
+
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+}
+
+.swiper-slide {
+  @media (max-width: $lg) {
+    &:first-child {
+      margin-left: 20px;
+    }
+  }
+}
