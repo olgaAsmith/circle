@@ -1,11 +1,13 @@
 import { Category } from '@src/utils/consts';
 import React, { useEffect, useRef, useState } from 'react';
+import CountYear from './CountYear';
 
 interface Props {
   activeCategoryId: number;
   onChangeCategory: (id: number) => void;
   points: Category[];
   title: string;
+  centerYear: number;
 }
 
 const getPointerAngle = (
@@ -24,6 +26,7 @@ const CirclePoints: React.FC<Props> = ({
   onChangeCategory,
   points,
   title,
+  centerYear,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [currentTitle, setCurrentTitle] = useState(title);
@@ -195,6 +198,12 @@ const CirclePoints: React.FC<Props> = ({
         onWheel={handleWheel}
         onKeyDown={handleCircleKeyDown}
       >
+        <span className='main__circle-year' aria-hidden='true'>
+          <CountYear value={centerYear} />
+        </span>
+        <span className='visually-hidden' aria-live='polite'>
+          {`Текущая дата: ${centerYear}`}
+        </span>
         {points.map((point, index) => {
           const angle = step * index;
           const isActive = activeCategoryId === point.id;
@@ -209,6 +218,7 @@ const CirclePoints: React.FC<Props> = ({
                 {
                   '--angle': `${absoluteAngle}deg`,
                   '--radius': `${radius}px`,
+                  '--point-color': point.color,
                 } as React.CSSProperties
               }
               onClick={() => onChangeCategory(point.id)}
@@ -217,17 +227,7 @@ const CirclePoints: React.FC<Props> = ({
               tabIndex={0}
               aria-pressed={isActive}
               aria-label={`Категория «${point.title}», ${point.start}\u2013${point.end}`}
-            >
-              <span
-                className={`main__point-id ${isActive ? 'main__point-id--active' : ''}`}
-                style={{
-                  transform: `translate(-50%, -50%)`,
-                }}
-                aria-hidden='true'
-              >
-                {point.id + 1}
-              </span>
-            </span>
+            />
           );
         })}
       </div>

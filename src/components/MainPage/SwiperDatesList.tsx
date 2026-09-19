@@ -8,13 +8,18 @@ import SlideButton from '../SVG/SlideButton';
 interface Props {
   activeCategoryId: number;
   events: Category[];
+  activeEventIndex: number;
+  onActiveEventIndexChange: (index: number) => void;
 }
 
-const SwiperDatesList: React.FC<Props> = ({ activeCategoryId, events }) => {
+const SwiperDatesList: React.FC<Props> = ({
+  activeCategoryId,
+  events,
+  activeEventIndex,
+  onActiveEventIndexChange,
+}) => {
   const swiperRef = useRef<SwiperType | null>(null);
 
-  const [isBeginning, setIsBeginning] = useState(true);
-  const [isEnd, setIsEnd] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [displayCategory, setDisplayCategory] = useState<Category | null>(null);
 
@@ -36,31 +41,44 @@ const SwiperDatesList: React.FC<Props> = ({ activeCategoryId, events }) => {
     const timer = setTimeout(() => {
       setDisplayCategory(activeCategory);
       setIsAnimating(false);
-      swiperRef.current?.slideTo(0);
+      swiperRef.current?.slideTo(0, 0);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [activeCategory, displayCategory]);
 
+  useEffect(() => {
+    const swiper = swiperRef.current;
+    if (!swiper || swiper.destroyed) return;
+    if (swiper.activeIndex === activeEventIndex) return;
+    swiper.slideTo(activeEventIndex);
+  }, [activeEventIndex, displayCategory?.id]);
+
   if (!displayCategory) return null;
+
+  const eventCount = displayCategory.events.length;
+
+  const navigate = (direction: -1 | 1) => {
+    const nextIndex = (activeEventIndex + direction + eventCount) % eventCount;
+    onActiveEventIndexChange(nextIndex);
+    swiperRef.current?.slideTo(nextIndex);
+  };
 
   return (
     <div className='slider'>
       <Swiper
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
-          setIsBeginning(swiper.isBeginning);
-          setIsEnd(swiper.isEnd);
+          if (swiper.activeIndex !== activeEventIndex) {
+            swiper.slideTo(activeEventIndex, 0);
+          }
         }}
         onSlideChange={(swiper) => {
-          setIsBeginning(swiper.isBeginning);
-          setIsEnd(swiper.isEnd);
+          onActiveEventIndexChange(swiper.activeIndex);
         }}
-        breakpoints={{
-          0: { slidesPerView: 1.65, spaceBetween: 25 },
-          768: { slidesPerView: 2.4, spaceBetween: 30 },
-          1024: { slidesPerView: 3, spaceBetween: 80 },
-        }}
+        slidesPerView={1}
+        spaceBetween={30}
+        speed={450}
         tag='ul'
         wrapperTag='ul'
         className={`list ${isAnimating ? 'list--fade' : ''}`}
@@ -74,27 +92,23 @@ const SwiperDatesList: React.FC<Props> = ({ activeCategoryId, events }) => {
       </Swiper>
 
       <div className='slider__buttons'>
-        {!isBeginning && (
-          <button
-            className='slider__button slider__button--prev'
-            onClick={() => swiperRef.current?.slidePrev()}
-            aria-label='Предыдущий слайд'
-            title='Предыдущий слайд'
-          >
-            <SlideButton color='#3877EE' />
-          </button>
-        )}
+        <button
+          className='slider__button slider__button--prev'
+          onClick={() => navigate(-1)}
+          aria-label='Предыдущая дата'
+          title='Предыдущая дата'
+        >
+          <SlideButton />
+        </button>
 
-        {!isEnd && (
-          <button
-            className='slider__button slider__button--next'
-            onClick={() => swiperRef.current?.slideNext()}
-            aria-label='Следующий слайд'
-            title='Следующий слайд'
-          >
-            <SlideButton color='#3877EE' />
-          </button>
-        )}
+        <button
+          className='slider__button slider__button--next'
+          onClick={() => navigate(1)}
+          aria-label='Следующая дата'
+          title='Следующая дата'
+        >
+          <SlideButton />
+        </button>
       </div>
     </div>
   );

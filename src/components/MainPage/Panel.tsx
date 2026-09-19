@@ -21,15 +21,15 @@ const Panel: React.FC<Props> = ({
   const activeIndex = events.findIndex((event) => event.id === activeCategoryId);
 
   const prevCategory = () => {
-    if (activeIndex > 0) {
-      onChangeCategory(events[activeIndex - 1].id);
-    }
+    if (activeIndex === -1) return;
+    const prevIndex = (activeIndex - 1 + events.length) % events.length;
+    onChangeCategory(events[prevIndex].id);
   };
 
   const nextCategory = () => {
-    if (activeIndex < events.length - 1) {
-      onChangeCategory(events[activeIndex + 1].id);
-    }
+    if (activeIndex === -1) return;
+    const nextIndex = (activeIndex + 1) % events.length;
+    onChangeCategory(events[nextIndex].id);
   };
 
   return (
@@ -41,7 +41,6 @@ const Panel: React.FC<Props> = ({
           <button
             className='panel__button panel__button--prev'
             onClick={prevCategory}
-            disabled={activeIndex === 0}
             aria-label='Предыдущая категория'
             title='Предыдущая категория'
           >
@@ -51,7 +50,6 @@ const Panel: React.FC<Props> = ({
           <button
             className='panel__button panel__button--next'
             onClick={nextCategory}
-            disabled={activeIndex === events.length - 1}
             aria-label='Следующая категория'
             title='Следующая категория'
           >
