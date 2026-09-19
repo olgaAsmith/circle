@@ -1,5 +1,5 @@
 import { Category } from '@src/utils/consts';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Props {
   activeCategoryId: number;
@@ -7,6 +7,17 @@ interface Props {
   points: Category[];
   title: string;
 }
+
+const getPointerAngle = (
+  clientX: number,
+  clientY: number,
+  centerX: number,
+  centerY: number,
+) => {
+  const standardAngle =
+    (Math.atan2(clientY - centerY, clientX - centerX) * 180) / Math.PI;
+  return (standardAngle + 90 + 360) % 360;
+};
 
 const CirclePoints: React.FC<Props> = ({
   activeCategoryId,
@@ -16,6 +27,15 @@ const CirclePoints: React.FC<Props> = ({
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [currentTitle, setCurrentTitle] = useState(title);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragDelta, setDragDelta] = useState(0);
+
+  const circleRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef<{
+    startAngle: number;
+    moved: boolean;
+  } | null>(null);
+  const wheelLockRef = useRef(false);
 
   const radius = 265;
   const targetAngle = 30;
@@ -24,7 +44,7 @@ const CirclePoints: React.FC<Props> = ({
   );
   const step = 360 / points.length;
   const activeAngle = activeIndex * step;
-  const rotationOffset = targetAngle - activeAngle;
+  const rotationOffset = targetAngle - activeAngle + dragDelta;
 
   useEffect(() => {
     setIsAnimating(true);
@@ -37,18 +57,143 @@ const CirclePoints: React.FC<Props> = ({
     return () => clearTimeout(timer);
   }, [title]);
 
+  const changeByStep = (direction: 1 | -1) => {
+    if (activeIndex === -1) return;
+    const nextIndex = (activeIndex + direction + points.length) % points.length;
+    onChangeCategory(points[nextIndex].id);
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rect = circleRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const startAngle = getPointerAngle(
+      event.clientX,
+      event.clientY,
+      centerX,
+      centerY,
+    );
+
+    dragState.current = { startAngle, moved: false };
+    (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragState.current) return;
+
+    const rect = circleRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const currentAngle = getPointerAngle(
+      event.clientX,
+      event.clientY,
+      centerX,
+      centerY,
+    );
+
+    let delta = currentAngle - dragState.current.startAngle;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+
+    if (Math.abs(delta) > 2) {
+      dragState.current.moved = true;
+      setIsDragging(true);
+    }
+
+    if (dragState.current.moved) {
+      setDragDelta(delta);
+    }
+  };
+
+  const finishDrag = () => {
+    if (!dragState.current) return;
+
+    if (dragState.current.moved) {
+      let closestIndex = activeIndex;
+      let closestDiff = Infinity;
+
+      points.forEach((_, index) => {
+        const absoluteAngle = (step * index + rotationOffset + 360 * 10) % 360;
+        let diff = Math.abs(absoluteAngle - targetAngle);
+        if (diff > 180) diff = 360 - diff;
+
+        if (diff < closestDiff) {
+          closestDiff = diff;
+          closestIndex = index;
+        }
+      });
+
+      if (points[closestIndex]) {
+        onChangeCategory(points[closestIndex].id);
+      }
+    }
+
+    dragState.current = null;
+    setIsDragging(false);
+    setDragDelta(0);
+  };
+
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (wheelLockRef.current) return;
+    if (Math.abs(event.deltaY) < 8) return;
+
+    wheelLockRef.current = true;
+    changeByStep(event.deltaY > 0 ? 1 : -1);
+
+    setTimeout(() => {
+      wheelLockRef.current = false;
+    }, 450);
+  };
+
+  const handleCircleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      changeByStep(1);
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      changeByStep(-1);
+    }
+  };
+
+  const handlePointKeyDown = (
+    event: React.KeyboardEvent<HTMLSpanElement>,
+    id: number,
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onChangeCategory(id);
+    }
+  };
+
   return (
     <div>
       <span
         className={`main__point-text ${isAnimating ? 'main__point-text--fade' : ''}`}
+        aria-hidden='true'
       >
         {currentTitle}
       </span>
+      <span className='visually-hidden' aria-live='polite'>
+        {`Выбрана категория: ${currentTitle}`}
+      </span>
       <div
-        className='main__circle'
+        ref={circleRef}
+        className={`main__circle main__circle--interactive ${isDragging ? 'main__circle--dragging' : ''}`}
         style={{
           transform: `translate(-50%, -50%)`,
         }}
+        role='group'
+        aria-label='Колесо категорий. Стрелки влево/вправо, колесо мыши или перетаскивание переключают категорию'
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+        onWheel={handleWheel}
+        onKeyDown={handleCircleKeyDown}
       >
         {points.map((point, index) => {
           const angle = step * index;
@@ -67,12 +212,18 @@ const CirclePoints: React.FC<Props> = ({
                 } as React.CSSProperties
               }
               onClick={() => onChangeCategory(point.id)}
+              onKeyDown={(event) => handlePointKeyDown(event, point.id)}
+              role='button'
+              tabIndex={0}
+              aria-pressed={isActive}
+              aria-label={`Категория «${point.title}», ${point.start}\u2013${point.end}`}
             >
               <span
                 className={`main__point-id ${isActive ? 'main__point-id--active' : ''}`}
                 style={{
                   transform: `translate(-50%, -50%)`,
                 }}
+                aria-hidden='true'
               >
                 {point.id + 1}
               </span>

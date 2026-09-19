@@ -1,17 +1,22 @@
 import React from 'react';
 import { Category } from '../../utils/consts';
 import SlideButton from '../SVG/SlideButton';
+import AutoplayButton from './AutoplayButton';
 
 interface Props {
   activeCategoryId: number;
   onChangeCategory: (id: number) => void;
   events: Category[];
+  isAutoPlaying: boolean;
+  onToggleAutoPlay: () => void;
 }
 
 const Panel: React.FC<Props> = ({
   activeCategoryId,
   onChangeCategory,
   events,
+  isAutoPlaying,
+  onToggleAutoPlay,
 }) => {
   const activeIndex = events.findIndex((event) => event.id === activeCategoryId);
 
@@ -27,16 +32,12 @@ const Panel: React.FC<Props> = ({
     }
   };
 
-  const formatNumber = (num: number) => (num + 1).toString().padStart(2, '0');
-
   return (
     <div className='panel'>
-      <div className='panel__nav'>
-        <span className='panel__info'>
-          {formatNumber(activeIndex)}/{formatNumber(events.length - 1)}
-        </span>
+      <div className='panel__group'>
+        <span className='panel__label'>Сменить категорию</span>
 
-        <div className='panel__buttons'>
+        <div className='panel__actions'>
           <button
             className='panel__button panel__button--prev'
             onClick={prevCategory}
@@ -56,6 +57,8 @@ const Panel: React.FC<Props> = ({
           >
             <SlideButton />
           </button>
+
+          <AutoplayButton isPlaying={isAutoPlaying} onToggle={onToggleAutoPlay} />
         </div>
       </div>
       <div className='panel__pagination'>
