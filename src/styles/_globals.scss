@@ -16,6 +16,13 @@ body {
   background-color: #f6f7fb;
 }
 
+@media (min-width: $xxl + 1) {
+  html {
+    background-color: color-mix(in srgb, var(--accent, #3877ee) 11%, #f6f7fb);
+    transition: background-color 0.45s ease;
+  }
+}
+
 .bg-decor {
   position: fixed;
   inset: 0;
@@ -23,6 +30,11 @@ body {
 
   overflow: hidden;
   pointer-events: none;
+  transition: opacity 0.45s ease;
+
+  @media (max-width: $lg) {
+    opacity: 0;
+  }
 
   span {
     position: absolute;

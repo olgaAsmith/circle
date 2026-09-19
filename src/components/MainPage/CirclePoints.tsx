@@ -40,14 +40,52 @@ const CirclePoints: React.FC<Props> = ({
   } | null>(null);
   const wheelLockRef = useRef(false);
 
-  const radius = 265;
+  const [orbitRadius, setOrbitRadius] = useState(265);
   const targetAngle = 30;
+
+  useEffect(() => {
+    const circle = circleRef.current;
+    if (!circle) return;
+
+    const updateRadius = () => {
+      const size = circle.getBoundingClientRect().width;
+      // Радиус по линии обводки круга (border 1px у main__circle)
+      setOrbitRadius(Math.max(0, size / 2 - 1));
+    };
+
+    updateRadius();
+
+    const observer = new ResizeObserver(updateRadius);
+    observer.observe(circle);
+
+    return () => observer.disconnect();
+  }, []);
   const activeIndex = points.findIndex(
     (point) => point.id === activeCategoryId,
   );
   const step = 360 / points.length;
-  const activeAngle = activeIndex * step;
-  const rotationOffset = targetAngle - activeAngle + dragDelta;
+
+  const prevIndexRef = useRef(activeIndex);
+  const [rotationOffset, setRotationOffset] = useState(
+    () => targetAngle - activeIndex * step,
+  );
+
+  useEffect(() => {
+    if (activeIndex === -1) return;
+
+    const prevIndex = prevIndexRef.current;
+    if (prevIndex === activeIndex) return;
+
+    const count = points.length;
+    let indexDelta = activeIndex - prevIndex;
+    while (indexDelta > count / 2) indexDelta -= count;
+    while (indexDelta < -count / 2) indexDelta += count;
+
+    setRotationOffset((prev) => prev - indexDelta * step);
+    prevIndexRef.current = activeIndex;
+  }, [activeIndex, points.length, step]);
+
+  const rotationWithDrag = rotationOffset + dragDelta;
 
   useEffect(() => {
     setIsAnimating(true);
@@ -120,7 +158,8 @@ const CirclePoints: React.FC<Props> = ({
       let closestDiff = Infinity;
 
       points.forEach((_, index) => {
-        const absoluteAngle = (step * index + rotationOffset + 360 * 10) % 360;
+        const absoluteAngle =
+          (step * index + rotationWithDrag + 360 * 10) % 360;
         let diff = Math.abs(absoluteAngle - targetAngle);
         if (diff > 180) diff = 360 - diff;
 
@@ -208,7 +247,7 @@ const CirclePoints: React.FC<Props> = ({
           const angle = step * index;
           const isActive = activeCategoryId === point.id;
 
-          const absoluteAngle = angle + rotationOffset;
+          const absoluteAngle = angle + rotationWithDrag;
 
           return (
             <span
@@ -217,7 +256,7 @@ const CirclePoints: React.FC<Props> = ({
               style={
                 {
                   '--angle': `${absoluteAngle}deg`,
-                  '--radius': `${radius}px`,
+                  '--radius': `${orbitRadius}px`,
                   '--point-color': point.color,
                 } as React.CSSProperties
               }
@@ -227,7 +266,13 @@ const CirclePoints: React.FC<Props> = ({
               tabIndex={0}
               aria-pressed={isActive}
               aria-label={`Категория «${point.title}», ${point.start}\u2013${point.end}`}
-            />
+            >
+              {!isActive && (
+                <span className='main__point-tooltip' role='tooltip'>
+                  {point.title}
+                </span>
+              )}
+            </span>
           );
         })}
       </div>

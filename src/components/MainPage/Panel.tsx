@@ -32,12 +32,12 @@ const Panel: React.FC<Props> = ({
     onChangeCategory(events[nextIndex].id);
   };
 
+  const activeCategory = events[activeIndex] ?? events[0];
+
   return (
     <div className='panel'>
       <div className='panel__group'>
-        <span className='panel__label'>Сменить категорию</span>
-
-        <div className='panel__actions'>
+        <div className='panel__category-nav'>
           <button
             className='panel__button panel__button--prev'
             onClick={prevCategory}
@@ -47,6 +47,8 @@ const Panel: React.FC<Props> = ({
             <SlideButton />
           </button>
 
+          <span className='panel__title'>{activeCategory.title}</span>
+
           <button
             className='panel__button panel__button--next'
             onClick={nextCategory}
@@ -55,9 +57,9 @@ const Panel: React.FC<Props> = ({
           >
             <SlideButton />
           </button>
-
-          <AutoplayButton isPlaying={isAutoPlaying} onToggle={onToggleAutoPlay} />
         </div>
+
+        <AutoplayButton isPlaying={isAutoPlaying} onToggle={onToggleAutoPlay} />
       </div>
       <div className='panel__pagination'>
         {events.map((item, index) => (

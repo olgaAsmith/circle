@@ -4,7 +4,6 @@ import CirclePoints from './MainPage/CirclePoints';
 import { events } from '../utils/consts';
 import SwiperDatesList from './MainPage/SwiperDatesList';
 import Panel from './MainPage/Panel';
-import MobTitle from './MainPage/MobTitle';
 const AUTOPLAY_INTERVAL = 4500;
 const AUTOPLAY_RESUME_DELAY = 7000;
 
@@ -59,22 +58,41 @@ const Main: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', activeCategory.color);
+  }, [activeCategory.color]);
+
   return (
-    <main
-      className='main'
-      style={{ '--accent': activeCategory.color } as React.CSSProperties}
-    >
+    <main className='main'>
       <div className='main__header'>
         <span className='main__title-decor'>
           <BorderTitle />
         </span>
-        <h1 className='main__title'>
-          Исторические <br />
-          даты
-        </h1>
+        <h1 className='main__title'>Исторические даты</h1>
       </div>
 
-      <div className='main__center'>
+      <div className='main__left-content'>
+        <div className='main__controls'>
+          <Panel
+            activeCategoryId={activeCategoryId}
+            onChangeCategory={handleUserChangeCategory}
+            events={events}
+            isAutoPlaying={isAutoPlaying}
+            onToggleAutoPlay={handleToggleAutoPlay}
+          />
+        </div>
+
+        <div className='main__footer'>
+          <SwiperDatesList
+            activeCategoryId={activeCategoryId}
+            events={events}
+            activeEventIndex={activeEventIndex}
+            onActiveEventIndexChange={setActiveEventIndex}
+          />
+        </div>
+      </div>
+
+      <div className='main__right'>
         <div className='main__circle main__circle--surface'>
           <CirclePoints
             activeCategoryId={activeCategoryId}
@@ -84,26 +102,6 @@ const Main: React.FC = () => {
             centerYear={activeEvent.year}
           />
         </div>
-      </div>
-
-      <div className='main__controls'>
-        <Panel
-          activeCategoryId={activeCategoryId}
-          onChangeCategory={handleUserChangeCategory}
-          events={events}
-          isAutoPlaying={isAutoPlaying}
-          onToggleAutoPlay={handleToggleAutoPlay}
-        />
-      </div>
-
-      <div className='main__footer'>
-        <MobTitle title={events[activeCategoryId].title} />
-        <SwiperDatesList
-          activeCategoryId={activeCategoryId}
-          events={events}
-          activeEventIndex={activeEventIndex}
-          onActiveEventIndexChange={setActiveEventIndex}
-        />
       </div>
     </main>
   );

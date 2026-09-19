@@ -1,7 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import type { Swiper as SwiperType } from 'swiper';
-import 'swiper/css';
+import React, { useEffect, useState } from 'react';
 import { Category } from '@src/utils/consts';
 import SlideButton from '../SVG/SlideButton';
 
@@ -12,16 +9,18 @@ interface Props {
   onActiveEventIndexChange: (index: number) => void;
 }
 
+const SLIDE_FADE_MS = 320;
+
 const SwiperDatesList: React.FC<Props> = ({
   activeCategoryId,
   events,
   activeEventIndex,
   onActiveEventIndexChange,
 }) => {
-  const swiperRef = useRef<SwiperType | null>(null);
-
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [isCategoryAnimating, setIsCategoryAnimating] = useState(false);
   const [displayCategory, setDisplayCategory] = useState<Category | null>(null);
+  const [renderIndex, setRenderIndex] = useState(activeEventIndex);
+  const [isSlideVisible, setIsSlideVisible] = useState(true);
 
   const activeCategory =
     events.find((event) => event.id === activeCategoryId) ?? null;
@@ -36,60 +35,59 @@ const SwiperDatesList: React.FC<Props> = ({
 
     if (displayCategory.id === activeCategory.id) return;
 
-    setIsAnimating(true);
+    setIsCategoryAnimating(true);
+    setIsSlideVisible(false);
 
     const timer = setTimeout(() => {
       setDisplayCategory(activeCategory);
-      setIsAnimating(false);
-      swiperRef.current?.slideTo(0, 0);
-    }, 300);
+      setRenderIndex(activeEventIndex);
+      setIsSlideVisible(true);
+      setIsCategoryAnimating(false);
+    }, SLIDE_FADE_MS);
 
     return () => clearTimeout(timer);
-  }, [activeCategory, displayCategory]);
+  }, [activeCategory, activeEventIndex, displayCategory]);
 
   useEffect(() => {
-    const swiper = swiperRef.current;
-    if (!swiper || swiper.destroyed) return;
-    if (swiper.activeIndex === activeEventIndex) return;
-    swiper.slideTo(activeEventIndex);
-  }, [activeEventIndex, displayCategory?.id]);
+    if (!displayCategory) return;
+    if (activeEventIndex === renderIndex) return;
+
+    setIsSlideVisible(false);
+
+    const timer = setTimeout(() => {
+      setRenderIndex(activeEventIndex);
+      setIsSlideVisible(true);
+    }, SLIDE_FADE_MS);
+
+    return () => clearTimeout(timer);
+  }, [activeEventIndex, displayCategory, renderIndex]);
 
   if (!displayCategory) return null;
 
   const eventCount = displayCategory.events.length;
+  const currentEvent = displayCategory.events[renderIndex] ?? displayCategory.events[0];
 
   const navigate = (direction: -1 | 1) => {
     const nextIndex = (activeEventIndex + direction + eventCount) % eventCount;
     onActiveEventIndexChange(nextIndex);
-    swiperRef.current?.slideTo(nextIndex);
   };
 
   return (
     <div className='slider'>
-      <Swiper
-        onSwiper={(swiper) => {
-          swiperRef.current = swiper;
-          if (swiper.activeIndex !== activeEventIndex) {
-            swiper.slideTo(activeEventIndex, 0);
-          }
-        }}
-        onSlideChange={(swiper) => {
-          onActiveEventIndexChange(swiper.activeIndex);
-        }}
-        slidesPerView={1}
-        spaceBetween={30}
-        speed={450}
-        tag='ul'
-        wrapperTag='ul'
-        className={`list ${isAnimating ? 'list--fade' : ''}`}
+      <div
+        className={`slider__viewport ${
+          isCategoryAnimating ? 'slider__viewport--category-fade' : ''
+        }`}
       >
-        {displayCategory.events.map((event) => (
-          <SwiperSlide key={event.year} tag='li' className='list__item'>
-            <h2 className='list__title'>{event.year}</h2>
-            <p className='list__text'>{event.text}</p>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+        <article
+          className={`list__item ${
+            isSlideVisible ? 'list__item--visible' : 'list__item--hidden'
+          }`}
+        >
+          <h2 className='list__title'>{currentEvent.year}</h2>
+          <p className='list__text'>{currentEvent.text}</p>
+        </article>
+      </div>
 
       <div className='slider__buttons'>
         <button
