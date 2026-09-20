@@ -47,11 +47,11 @@
     grid-template-columns: minmax(0, 1fr) minmax(360px, 480px);
   }
 
-  @media (min-width: $lg + 1) {
+  @media (min-width: $lg-up) {
     overflow: hidden;
     background-color: var(--accent-desktop-bg);
 
-    @media (min-width: $xxl + 1) {
+    @media (min-width: $xxl-up) {
       width: 100%;
       max-width: $xxl;
       margin-inline: auto;
@@ -611,7 +611,7 @@
       color 0.3s ease,
       background 0.3s ease;
 
-    @media (min-width: $lg + 1) {
+    @media (min-width: $lg-up) {
       display: none;
     }
   }
@@ -670,7 +670,7 @@
       animation: fadeOutText 0.32s ease forwards;
     }
 
-    @media (min-width: $lg + 1) {
+    @media (min-width: $lg-up) {
       padding: 8px 6px 12px;
     }
   }
@@ -759,7 +759,7 @@
     gap: 24px;
     width: 100%;
 
-    @media (min-width: $lg + 1) {
+    @media (min-width: $lg-up) {
       position: absolute;
       top: 50%;
       gap: 0;
@@ -779,27 +779,27 @@
     cursor: pointer;
     transform: none;
 
-    @media (min-width: $lg + 1) {
+    @media (min-width: $lg-up) {
       position: absolute;
       transform: translateY(-50%);
     }
 
     &--prev {
-      @media (min-width: $lg + 1) {
+      @media (min-width: $lg-up) {
         left: -64px;
       }
 
-      @media (min-width: $lg + 1) and (max-width: $xl) {
+      @media (min-width: $lg-up) and (max-width: $xl) {
         left: -52px;
       }
     }
 
     &--next {
-      @media (min-width: $lg + 1) {
+      @media (min-width: $lg-up) {
         right: -64px;
       }
 
-      @media (min-width: $lg + 1) and (max-width: $xl) {
+      @media (min-width: $lg-up) and (max-width: $xl) {
         right: -52px;
       }
 
@@ -936,7 +936,7 @@
     right: max(10px, env(safe-area-inset-right, 0px));
   }
 
-  @media (min-width: $lg + 1) {
+  @media (min-width: $lg-up) {
     top: auto;
     bottom: max(24px, env(safe-area-inset-bottom, 0px));
     right: max(24px, env(safe-area-inset-right, 0px));
@@ -1022,7 +1022,7 @@
       0 24px 56px -20px rgba(15, 23, 42, 0.45),
       0 8px 24px -8px rgba(66, 86, 122, 0.25);
 
-    @media (min-width: $lg + 1) {
+    @media (min-width: $lg-up) {
       top: 50%;
       left: 50%;
       width: 40%;

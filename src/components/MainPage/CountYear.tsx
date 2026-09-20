@@ -9,8 +9,8 @@ const CountYear: React.FC<AnimatedNumberProps> = ({ value, duration = 500 }) => 
   const [display, setDisplay] = useState(value);
 
   useEffect(() => {
-    let start = display;
-    let end = value;
+    const start = display;
+    const end = value;
     if (start === end) return;
 
     const diff = end - start;
@@ -26,7 +26,7 @@ const CountYear: React.FC<AnimatedNumberProps> = ({ value, duration = 500 }) => 
     }, stepTime);
 
     return () => clearInterval(interval);
-  }, [value, duration]);
+  }, [value, duration, display]);
 
   return <span>{display}</span>;
 };

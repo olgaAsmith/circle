@@ -18,7 +18,7 @@ body {
   background-color: #f6f7fb;
 }
 
-@media (min-width: $xxl + 1) {
+@media (min-width: $xxl-up) {
   html {
     background-color: color-mix(in srgb, var(--accent, #3877ee) 11%, #f6f7fb);
     transition: background-color 0.45s ease;
