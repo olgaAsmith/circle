@@ -89,6 +89,21 @@ const SwiperDatesList: React.FC<Props> = ({
         </article>
       </div>
 
+      <div className='slider__pagination' aria-label='Факты по годам'>
+        {(activeCategory ?? displayCategory).events.map((item, index) => (
+          <button
+            key={`${activeCategoryId}-${item.year}-${index}`}
+            type='button'
+            className={`slider__dot ${
+              index === activeEventIndex ? 'slider__dot--active' : ''
+            }`}
+            onClick={() => onActiveEventIndexChange(index)}
+            aria-label={`${item.year} год, факт ${index + 1} из ${eventCount}`}
+            aria-current={index === activeEventIndex ? 'true' : undefined}
+          />
+        ))}
+      </div>
+
       <div className='slider__buttons'>
         <button
           className='slider__button slider__button--prev'

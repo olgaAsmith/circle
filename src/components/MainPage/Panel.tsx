@@ -61,18 +61,6 @@ const Panel: React.FC<Props> = ({
 
         <AutoplayButton isPlaying={isAutoPlaying} onToggle={onToggleAutoPlay} />
       </div>
-      <div className='panel__pagination'>
-        {events.map((item, index) => (
-          <button
-            key={item.id}
-            className={`panel__dot ${
-              index === activeIndex ? 'panel__dot--active' : ''
-            }`}
-            onClick={() => onChangeCategory(item.id)}
-            aria-label={`Категория ${index + 1}`}
-          />
-        ))}
-      </div>
     </div>
   );
 };

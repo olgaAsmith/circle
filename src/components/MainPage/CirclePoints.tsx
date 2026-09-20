@@ -49,7 +49,6 @@ const CirclePoints: React.FC<Props> = ({
 
     const updateRadius = () => {
       const size = circle.getBoundingClientRect().width;
-      // Радиус по линии обводки круга (border 1px у main__circle)
       setOrbitRadius(Math.max(0, size / 2 - 1));
     };
 
@@ -192,11 +191,13 @@ const CirclePoints: React.FC<Props> = ({
   };
 
   const handleCircleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown') {
       event.preventDefault();
+      event.stopPropagation();
       changeByStep(1);
-    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    } else if (event.key === 'ArrowUp') {
       event.preventDefault();
+      event.stopPropagation();
       changeByStep(-1);
     }
   };
@@ -229,7 +230,7 @@ const CirclePoints: React.FC<Props> = ({
           transform: `translate(-50%, -50%)`,
         }}
         role='group'
-        aria-label='Колесо категорий. Стрелки влево/вправо, колесо мыши или перетаскивание переключают категорию'
+        aria-label='Колесо категорий. Стрелки вверх и вниз, колесо мыши или перетаскивание переключают категорию'
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}
