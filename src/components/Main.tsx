@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import BorderTitle from './SVG/BorderTitle';
 import CirclePoints from './MainPage/CirclePoints';
 import { events } from '../utils/consts';
@@ -19,9 +19,14 @@ const Main: React.FC = () => {
   const activeEvent =
     activeCategory.events[activeEventIndex] ?? activeCategory.events[0];
 
-  autoplayStateRef.current = { categoryId: activeCategoryId, eventIndex: activeEventIndex };
+  useEffect(() => {
+    autoplayStateRef.current = {
+      categoryId: activeCategoryId,
+      eventIndex: activeEventIndex,
+    };
+  }, [activeCategoryId, activeEventIndex]);
 
-  const pauseAutoplayTemporarily = () => {
+  const pauseAutoplayTemporarily = useCallback(() => {
     if (!isAutoPlaying) return;
 
     setIsPausedByUser(true);
@@ -29,18 +34,24 @@ const Main: React.FC = () => {
     resumeTimerRef.current = setTimeout(() => {
       setIsPausedByUser(false);
     }, AUTOPLAY_RESUME_DELAY);
-  };
+  }, [isAutoPlaying]);
 
-  const handleUserChangeCategory = (id: number) => {
-    setActiveCategoryId(id);
-    setActiveEventIndex(0);
-    pauseAutoplayTemporarily();
-  };
+  const handleUserChangeCategory = useCallback(
+    (id: number) => {
+      setActiveCategoryId(id);
+      setActiveEventIndex(0);
+      pauseAutoplayTemporarily();
+    },
+    [pauseAutoplayTemporarily],
+  );
 
-  const handleUserChangeEvent = (index: number) => {
-    setActiveEventIndex(index);
-    pauseAutoplayTemporarily();
-  };
+  const handleUserChangeEvent = useCallback(
+    (index: number) => {
+      setActiveEventIndex(index);
+      pauseAutoplayTemporarily();
+    },
+    [pauseAutoplayTemporarily],
+  );
 
   const handleToggleAutoPlay = () => {
     if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
@@ -126,7 +137,12 @@ const Main: React.FC = () => {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [activeCategoryId, activeEventIndex]);
+  }, [
+    activeCategoryId,
+    activeEventIndex,
+    handleUserChangeCategory,
+    handleUserChangeEvent,
+  ]);
 
   return (
     <main className='main'>

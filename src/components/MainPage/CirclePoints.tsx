@@ -28,8 +28,8 @@ const CirclePoints: React.FC<Props> = ({
   title,
   centerYear,
 }) => {
-  const [isAnimating, setIsAnimating] = useState(false);
   const [currentTitle, setCurrentTitle] = useState(title);
+  const isAnimating = title !== currentTitle;
   const [isDragging, setIsDragging] = useState(false);
   const [dragDelta, setDragDelta] = useState(0);
 
@@ -87,15 +87,14 @@ const CirclePoints: React.FC<Props> = ({
   const rotationWithDrag = rotationOffset + dragDelta;
 
   useEffect(() => {
-    setIsAnimating(true);
+    if (!isAnimating) return;
 
     const timer = setTimeout(() => {
       setCurrentTitle(title);
-      setIsAnimating(false);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [title]);
+  }, [title, isAnimating]);
 
   const changeByStep = (direction: 1 | -1) => {
     if (activeIndex === -1) return;

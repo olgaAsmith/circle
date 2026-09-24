@@ -17,26 +17,21 @@ const SwiperDatesList: React.FC<Props> = ({
   activeEventIndex,
   onActiveEventIndexChange,
 }) => {
+  const activeCategory =
+    events.find((event) => event.id === activeCategoryId) ?? events[0];
+
   const [isCategoryAnimating, setIsCategoryAnimating] = useState(false);
-  const [displayCategory, setDisplayCategory] = useState<Category | null>(null);
+  const [displayCategory, setDisplayCategory] = useState(activeCategory);
   const [renderIndex, setRenderIndex] = useState(activeEventIndex);
   const [isSlideVisible, setIsSlideVisible] = useState(true);
 
-  const activeCategory =
-    events.find((event) => event.id === activeCategoryId) ?? null;
-
   useEffect(() => {
-    if (!activeCategory) return;
-
-    if (!displayCategory) {
-      setDisplayCategory(activeCategory);
-      return;
-    }
-
     if (displayCategory.id === activeCategory.id) return;
 
-    setIsCategoryAnimating(true);
-    setIsSlideVisible(false);
+    const frameId = requestAnimationFrame(() => {
+      setIsCategoryAnimating(true);
+      setIsSlideVisible(false);
+    });
 
     const timer = setTimeout(() => {
       setDisplayCategory(activeCategory);
@@ -45,24 +40,29 @@ const SwiperDatesList: React.FC<Props> = ({
       setIsCategoryAnimating(false);
     }, SLIDE_FADE_MS);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timer);
+    };
   }, [activeCategory, activeEventIndex, displayCategory]);
 
   useEffect(() => {
-    if (!displayCategory) return;
     if (activeEventIndex === renderIndex) return;
 
-    setIsSlideVisible(false);
+    const frameId = requestAnimationFrame(() => {
+      setIsSlideVisible(false);
+    });
 
     const timer = setTimeout(() => {
       setRenderIndex(activeEventIndex);
       setIsSlideVisible(true);
     }, SLIDE_FADE_MS);
 
-    return () => clearTimeout(timer);
-  }, [activeEventIndex, displayCategory, renderIndex]);
-
-  if (!displayCategory) return null;
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timer);
+    };
+  }, [activeEventIndex, renderIndex]);
 
   const eventCount = displayCategory.events.length;
   const currentEvent = displayCategory.events[renderIndex] ?? displayCategory.events[0];
@@ -90,7 +90,7 @@ const SwiperDatesList: React.FC<Props> = ({
       </div>
 
       <div className='slider__pagination' aria-label='Факты по годам'>
-        {(activeCategory ?? displayCategory).events.map((item, index) => (
+        {activeCategory.events.map((item, index) => (
           <button
             key={`${activeCategoryId}-${item.year}-${index}`}
             type='button'
