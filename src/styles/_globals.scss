@@ -1,6 +1,10 @@
 @use './vars';
 @use './media' as *;
 
+:root {
+  --accent: #9333ea;
+}
+
 *,
 *::before,
 *::after {
@@ -11,11 +15,11 @@ html,
 body {
   padding: 0;
   margin: 0;
-
-  font-family: vars.$font-primary;
+  font-family: vars.$font;
   font-size: 14px;
   color: #42567a;
   background-color: #f6f7fb;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @media (min-width: $xxl-up) {
@@ -42,10 +46,14 @@ body {
   outline-offset: 2px;
 }
 
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 h1,
 h2 {
   margin: 0;
-  font-family: vars.$font-secondary;
+  font-family: vars.$font;
 }
 
 p {
@@ -59,21 +67,40 @@ ul {
 }
 
 button {
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  border: 1px solid rgba(66, 86, 122, 0.5);
-  background-color: white;
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+}
 
-  display: flex;
+.icon-button {
+  display: inline-flex;
   justify-content: center;
   align-items: center;
-
-  transition: opacity 0.7s ease;
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  min-height: 50px;
   padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(66, 86, 122, 0.5);
+  background-color: white;
   cursor: pointer;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.3s ease;
+
   &:hover {
-    opacity: 0.6;
+    opacity: 1;
+    border-color: var(--accent, #3877ee);
+    box-shadow: 0 10px 30px -8px
+      color-mix(in srgb, var(--accent, #3877ee) 55%, transparent);
   }
 
   &:disabled {
@@ -82,12 +109,14 @@ button {
   }
 
   @media (max-width: $lg) {
-    width: 25px;
-    height: 25px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
 
     svg {
-      width: 6px;
-      height: 8px;
+      width: 8px;
+      height: 10px;
     }
   }
 }

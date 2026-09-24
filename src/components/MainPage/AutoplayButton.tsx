@@ -1,4 +1,3 @@
-import React from 'react';
 import PlayPauseIcon from '../SVG/PlayPauseIcon';
 
 interface Props {
@@ -6,10 +5,11 @@ interface Props {
   onToggle: () => void;
 }
 
-const AutoplayButton: React.FC<Props> = ({ isPlaying, onToggle }) => {
+function AutoplayButton({ isPlaying, onToggle }: Props) {
   return (
     <button
-      className='autoplay-button'
+      type='button'
+      className='icon-button autoplay-button'
       onClick={onToggle}
       aria-label={isPlaying ? 'Поставить автопрокрутку на паузу' : 'Запустить автопрокрутку'}
       aria-pressed={isPlaying}
@@ -18,6 +18,6 @@ const AutoplayButton: React.FC<Props> = ({ isPlaying, onToggle }) => {
       <PlayPauseIcon isPlaying={isPlaying} />
     </button>
   );
-};
+}
 
 export default AutoplayButton;

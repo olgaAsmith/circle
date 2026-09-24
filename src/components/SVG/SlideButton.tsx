@@ -1,10 +1,8 @@
-import React from 'react';
-
-interface BorderTitleProps {
+interface SlideButtonProps {
   color?: string;
 }
 
-const SlideButton: React.FC<BorderTitleProps> = ({ color = '#42567A' }) => {
+function SlideButton({ color = '#42567A' }: SlideButtonProps) {
   return (
     <svg
       width='9'
@@ -20,6 +18,6 @@ const SlideButton: React.FC<BorderTitleProps> = ({ color = '#42567A' }) => {
       />
     </svg>
   );
-};
+}
 
 export default SlideButton;

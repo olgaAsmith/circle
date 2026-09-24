@@ -1,6 +1,6 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
-const HelpButton: React.FC = () => {
+function HelpButton() {
   const [isOpen, setIsOpen] = useState(false);
   const titleId = useId();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -90,6 +90,6 @@ const HelpButton: React.FC = () => {
       )}
     </div>
   );
-};
+}
 
 export default HelpButton;

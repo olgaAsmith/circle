@@ -1,23 +1,32 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import BorderTitle from './SVG/BorderTitle';
 import CirclePoints from './MainPage/CirclePoints';
-import { events } from '../utils/consts';
+import {
+  getCategoryById,
+  getEventAt,
+  getNeighborCategory,
+} from '@src/utils/consts';
 import SwiperDatesList from './MainPage/SwiperDatesList';
 import Panel from './MainPage/Panel';
+
 const AUTOPLAY_INTERVAL = 5000;
 const AUTOPLAY_RESUME_DELAY = 8000;
 
-const Main: React.FC = () => {
-  const [activeCategoryId, setActiveCategoryId] = useState<number>(0);
-  const [activeEventIndex, setActiveEventIndex] = useState<number>(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(true);
-  const [isPausedByUser, setIsPausedByUser] = useState<boolean>(false);
+function Main() {
+  const [activeCategoryId, setActiveCategoryId] = useState(0);
+  const [activeEventIndex, setActiveEventIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isAutoplayHeld, setIsAutoplayHeld] = useState(false);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoplayStateRef = useRef({ categoryId: 0, eventIndex: 0 });
+  const isAutoPlayingRef = useRef(isAutoPlaying);
 
-  const activeCategory = events.find((event) => event.id === activeCategoryId) ?? events[0];
-  const activeEvent =
-    activeCategory.events[activeEventIndex] ?? activeCategory.events[0];
+  const activeCategory = getCategoryById(activeCategoryId);
+  const activeEvent = getEventAt(activeCategory, activeEventIndex);
+
+  useEffect(() => {
+    isAutoPlayingRef.current = isAutoPlaying;
+  }, [isAutoPlaying]);
 
   useEffect(() => {
     autoplayStateRef.current = {
@@ -26,46 +35,45 @@ const Main: React.FC = () => {
     };
   }, [activeCategoryId, activeEventIndex]);
 
-  const pauseAutoplayTemporarily = useCallback(() => {
-    if (!isAutoPlaying) return;
+  const holdAutoplayTemporarily = useCallback(() => {
+    if (!isAutoPlayingRef.current) return;
 
-    setIsPausedByUser(true);
+    setIsAutoplayHeld(true);
     if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     resumeTimerRef.current = setTimeout(() => {
-      setIsPausedByUser(false);
+      setIsAutoplayHeld(false);
     }, AUTOPLAY_RESUME_DELAY);
-  }, [isAutoPlaying]);
+  }, []);
 
   const handleUserChangeCategory = useCallback(
     (id: number) => {
       setActiveCategoryId(id);
       setActiveEventIndex(0);
-      pauseAutoplayTemporarily();
+      holdAutoplayTemporarily();
     },
-    [pauseAutoplayTemporarily],
+    [holdAutoplayTemporarily],
   );
 
   const handleUserChangeEvent = useCallback(
     (index: number) => {
       setActiveEventIndex(index);
-      pauseAutoplayTemporarily();
+      holdAutoplayTemporarily();
     },
-    [pauseAutoplayTemporarily],
+    [holdAutoplayTemporarily],
   );
 
-  const handleToggleAutoPlay = () => {
+  const handleToggleAutoPlay = useCallback(() => {
     if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
-    setIsPausedByUser(false);
+    setIsAutoplayHeld(false);
     setIsAutoPlaying((prev) => !prev);
-  };
+  }, []);
 
   useEffect(() => {
-    if (!isAutoPlaying || isPausedByUser) return;
+    if (!isAutoPlaying || isAutoplayHeld) return;
 
     const interval = setInterval(() => {
       const { categoryId, eventIndex } = autoplayStateRef.current;
-      const categoryIndex = events.findIndex((event) => event.id === categoryId);
-      const category = events[categoryIndex] ?? events[0];
+      const category = getCategoryById(categoryId);
       const lastEventIndex = category.events.length - 1;
 
       if (eventIndex < lastEventIndex) {
@@ -73,13 +81,12 @@ const Main: React.FC = () => {
         return;
       }
 
-      const nextCategoryIndex = (categoryIndex + 1) % events.length;
-      setActiveCategoryId(events[nextCategoryIndex].id);
+      setActiveCategoryId(getNeighborCategory(categoryId, 1).id);
       setActiveEventIndex(0);
     }, AUTOPLAY_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [isAutoPlaying, isPausedByUser]);
+  }, [isAutoPlaying, isAutoplayHeld]);
 
   useEffect(() => {
     return () => {
@@ -88,7 +95,10 @@ const Main: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--accent', activeCategory.color);
+    document.documentElement.style.setProperty(
+      '--accent',
+      activeCategory.color,
+    );
   }, [activeCategory.color]);
 
   useEffect(() => {
@@ -98,40 +108,35 @@ const Main: React.FC = () => {
       if (target.closest('input, textarea, select, [contenteditable="true"]')) {
         return;
       }
+      if (target.closest('[role="dialog"], .help__panel')) {
+        return;
+      }
 
-      const categoryIndex = events.findIndex(
-        (item) => item.id === activeCategoryId,
-      );
-      const category = events[categoryIndex] ?? events[0];
+      const category = getCategoryById(activeCategoryId);
       const eventCount = category.events.length;
+      if (eventCount === 0) return;
 
       if (event.key === 'ArrowUp') {
         event.preventDefault();
-        const prevIndex =
-          (categoryIndex - 1 + events.length) % events.length;
-        handleUserChangeCategory(events[prevIndex].id);
+        handleUserChangeCategory(getNeighborCategory(activeCategoryId, -1).id);
         return;
       }
 
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        const nextIndex = (categoryIndex + 1) % events.length;
-        handleUserChangeCategory(events[nextIndex].id);
+        handleUserChangeCategory(getNeighborCategory(activeCategoryId, 1).id);
         return;
       }
 
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        const prevEventIndex =
-          (activeEventIndex - 1 + eventCount) % eventCount;
-        handleUserChangeEvent(prevEventIndex);
+        handleUserChangeEvent((activeEventIndex - 1 + eventCount) % eventCount);
         return;
       }
 
       if (event.key === 'ArrowRight') {
         event.preventDefault();
-        const nextEventIndex = (activeEventIndex + 1) % eventCount;
-        handleUserChangeEvent(nextEventIndex);
+        handleUserChangeEvent((activeEventIndex + 1) % eventCount);
       }
     };
 
@@ -145,48 +150,44 @@ const Main: React.FC = () => {
   ]);
 
   return (
-    <main className='main'>
-      <div className='main__header'>
-        <span className='main__title-decor'>
+    <main className="main">
+      <div className="main__header">
+        <span className="main__title-decor">
           <BorderTitle />
         </span>
-        <h1 className='main__title'>Исторические даты</h1>
+        <h1 className="main__title">Исторические даты</h1>
       </div>
 
-      <div className='main__left-content'>
-        <div className='main__controls'>
+      <div className="main__left-content">
+        <div className="main__controls">
           <Panel
             activeCategoryId={activeCategoryId}
             onChangeCategory={handleUserChangeCategory}
-            events={events}
             isAutoPlaying={isAutoPlaying}
             onToggleAutoPlay={handleToggleAutoPlay}
           />
         </div>
 
-        <div className='main__footer'>
+        <div className="main__footer">
           <SwiperDatesList
             activeCategoryId={activeCategoryId}
-            events={events}
             activeEventIndex={activeEventIndex}
             onActiveEventIndexChange={handleUserChangeEvent}
           />
         </div>
       </div>
 
-      <div className='main__right'>
-        <div className='main__circle main__circle--surface'>
+      <div className="main__right">
+        <div className="main__circle">
           <CirclePoints
             activeCategoryId={activeCategoryId}
             onChangeCategory={handleUserChangeCategory}
-            points={events}
-            title={events[activeCategoryId].title}
             centerYear={activeEvent.year}
           />
         </div>
       </div>
     </main>
   );
-};
+}
 
 export default Main;

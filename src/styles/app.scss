@@ -12,6 +12,10 @@
   overflow-x: clip;
 }
 
+.app__header {
+  position: static;
+}
+
 .main {
   position: relative;
   width: 100%;
@@ -108,6 +112,9 @@
     grid-area: header;
     display: flex;
     gap: 48px;
+    min-width: 0;
+    max-width: 100%;
+    align-items: flex-start;
     align-self: start;
     justify-self: start;
 
@@ -166,6 +173,7 @@
   }
 
   &__title-decor {
+    flex-shrink: 0;
     color: var(--accent, #3877ee);
     transition: color 0.45s ease;
 
@@ -175,24 +183,18 @@
   }
 
   &__title {
+    min-width: 0;
+    max-width: 100%;
     font-weight: 700;
-    font-size: 56px;
-    line-height: 120%;
-    white-space: nowrap;
-
-    @media (max-width: $xxl) {
-      font-size: 48px;
-    }
-
-    @media (max-width: $xl) {
-      font-size: 40px;
-    }
+    font-size: clamp(32px, 3.6vw, 56px);
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: break-word;
 
     @media (max-width: $lg) {
       font-size: clamp(30px, 8.5vw, 42px);
       line-height: 1.12;
       text-align: center;
-      white-space: normal;
     }
 
     @media (max-width: $md) {
@@ -206,7 +208,7 @@
     left: 50%;
     z-index: 4;
 
-    font-family: vars.$font-secondary;
+    font-family: vars.$font;
     font-weight: 700;
     font-size: 80px;
     line-height: 90%;
@@ -214,8 +216,13 @@
     text-align: center;
     white-space: nowrap;
     pointer-events: none;
+    user-select: none;
 
-    background: linear-gradient(135deg, #5d5fef, var(--accent, #3877ee));
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent, #9333ea) 72%, #1e1b4b),
+      var(--accent, #9333ea)
+    );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -234,18 +241,6 @@
   .panel__button,
   .slider__button,
   .autoplay-button {
-    transition:
-      border-color 0.3s ease,
-      box-shadow 0.3s ease,
-      opacity 0.3s ease;
-
-    &:hover {
-      opacity: 1;
-      border-color: var(--accent, #3877ee);
-      box-shadow: 0 10px 30px -8px
-        color-mix(in srgb, var(--accent, #3877ee) 55%, transparent);
-    }
-
     @media (max-width: $lg) {
       width: 44px;
       height: 44px;
@@ -285,6 +280,7 @@
     position: relative;
     top: auto;
     left: auto;
+    z-index: 1;
 
     width: min(100%, 530px);
     height: auto;
@@ -292,54 +288,79 @@
 
     border-radius: 50%;
     border: 1px solid rgba(66, 86, 122, 0.3);
+    background: radial-gradient(
+      circle at 50% 45%,
+      color-mix(in srgb, var(--accent, #3877ee) 22%, white) 0%,
+      color-mix(in srgb, var(--accent, #3877ee) 6%, white) 55%,
+      white 100%
+    );
+    box-shadow: 0 0 60px -20px var(--accent, #3877ee);
+    outline: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+
+    &::selection,
+    *::selection {
+      background: transparent;
+      color: inherit;
+    }
 
     transform: none;
     transition:
-      transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
       box-shadow 0.6s ease,
       background 0.6s ease;
 
     @media (max-width: $lg) {
       display: none;
     }
+  }
 
-    &--surface {
-      z-index: 1;
-      background: radial-gradient(
-        circle at 50% 45%,
-        color-mix(in srgb, var(--accent, #3877ee) 22%, white) 0%,
-        color-mix(in srgb, var(--accent, #3877ee) 6%, white) 55%,
-        white 100%
-      );
-      box-shadow: 0 0 60px -20px var(--accent, #3877ee);
+  &__circle-stage {
+    position: absolute;
+    inset: 0;
+    user-select: none;
+  }
 
-      > div {
-        position: absolute;
-        inset: 0;
-      }
+  &__wheel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 3;
 
-      .main__circle--interactive {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 100%;
-        height: 100%;
-        border: none;
-        background: transparent;
-        box-shadow: none;
-      }
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    outline: none;
+
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transform: translate(-50%, -50%);
+    container-type: size;
+    --rotation-offset: 30deg;
+    --drag-delta: 0deg;
+    --orbit-radius: calc(50cqmin - 1px);
+
+    &:focus,
+    &:focus-visible,
+    &:active {
+      outline: none;
+      box-shadow: none;
     }
 
-    &--interactive {
-      z-index: 3;
-      cursor: grab;
-      touch-action: none;
-      user-select: none;
+    &::selection,
+    *::selection {
+      background: transparent;
+      color: inherit;
     }
 
     &--dragging {
       cursor: grabbing;
-      box-shadow: 0 0 80px -15px var(--accent, #3877ee);
+      box-shadow: none;
 
       .main__point-tooltip {
         opacity: 0 !important;
@@ -370,6 +391,12 @@
       white
     );
 
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    padding: 0;
+    margin: 0;
+
     position: absolute;
     top: 50%;
     left: 50%;
@@ -377,10 +404,18 @@
 
     width: 6px;
     height: 6px;
+    min-width: 6px;
+    min-height: 6px;
 
     border-radius: 50%;
     background-color: #42567a;
     border: 1px solid transparent;
+    box-shadow: none;
+    opacity: 1;
+
+    font: inherit;
+    color: inherit;
+    line-height: 0;
 
     &::before {
       content: '';
@@ -402,11 +437,32 @@
       transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &:focus,
+    &:focus-visible {
+      outline: none;
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 3px
+        color-mix(in srgb, var(--point-color, #42567a) 45%, transparent);
+    }
 
     &--orbital {
-      transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
-        translateY(calc(-1 * var(--radius, 265px)))
-        rotate(calc(-1 * var(--angle, 0deg)));
+      --absolute-angle: calc(
+        var(--base-angle, 0deg) + var(--rotation-offset, 30deg) +
+          var(--drag-delta, 0deg)
+      );
+
+      transform: translate(-50%, -50%) rotate(var(--absolute-angle))
+        translateY(calc(-1 * var(--orbit-radius, 265px)))
+        rotate(calc(-1 * var(--absolute-angle)));
 
       transition:
         width 0.15s ease,
@@ -417,9 +473,9 @@
         transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:not(.main__point--active):hover {
-        transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
-          translateY(calc(-1 * var(--radius, 265px)))
-          rotate(calc(-1 * var(--angle, 0deg))) scale(1.35);
+        transform: translate(-50%, -50%) rotate(var(--absolute-angle))
+          translateY(calc(-1 * var(--orbit-radius, 265px)))
+          rotate(calc(-1 * var(--absolute-angle))) scale(1.35);
 
         box-shadow: 0 0 0 3px rgb(66 86 122 / 18%);
 
@@ -467,7 +523,7 @@
         0 0 0 2px var(--point-pastel-border),
         0 8px 24px -8px
           color-mix(in srgb, var(--point-pastel-strong) 55%, transparent);
-      animation: pointPulse 2.4s ease-in-out infinite;
+      animation: point-pulse 2.4s ease-in-out infinite;
     }
   }
 
@@ -486,15 +542,15 @@
 
     transition: color 0.3s ease;
 
-    animation: fadeInText 0.3s ease forwards;
+    animation: fade-in-text 0.3s ease forwards;
 
-    &--fade {
-      animation: fadeOutText 0.3s ease forwards;
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
     }
   }
 }
 
-@keyframes pointPulse {
+@keyframes point-pulse {
   0%,
   100% {
     box-shadow:
@@ -514,16 +570,18 @@
   }
 }
 
-@keyframes fadeOutText {
-  0% {
-    opacity: 1;
-  }
-  100% {
+@keyframes fade-slide-in {
+  from {
     opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes fadeInText {
+@keyframes fade-in-text {
   0% {
     opacity: 0;
   }
@@ -540,8 +598,10 @@
     justify-content: center;
     gap: 16px;
     text-align: center;
+    position: relative;
 
-    height: 180px;
+    min-height: 180px;
+    height: auto;
     margin: 0;
     padding: 16px 18px 20px;
 
@@ -555,21 +615,18 @@
 
     opacity: 1;
     transform: translateY(0);
+    animation: fade-slide-in 0.32s ease;
     transition:
-      opacity 0.32s ease,
-      transform 0.32s ease,
       border-color 0.3s ease,
       box-shadow 0.3s ease;
 
-    &--hidden {
-      opacity: 0;
-      transform: translateY(8px);
-      pointer-events: none;
+    @media (max-width: $lg) {
+      animation: none;
     }
 
-    &--visible {
-      opacity: 1;
-      transform: translateY(0);
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      transition: none;
     }
 
     &:hover {
@@ -581,6 +638,7 @@
     }
 
     @media (max-width: $lg) {
+      min-height: 210px;
       height: 210px;
       padding: 14px 16px 16px;
       gap: 12px;
@@ -588,7 +646,7 @@
     }
 
     @media (max-width: $md) {
-      height: 200px;
+      min-height: 200px;
       padding: 12px 14px 14px;
     }
   }
@@ -616,9 +674,36 @@
     }
   }
 
+  &__text-area {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-height: 0;
+  }
+
+  &__text-block {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: calc(5 * 1.3 * 20px);
+
+    @media (max-width: $lg) {
+      min-height: calc(5 * 1.35 * 18px);
+    }
+
+    @media (max-width: $md) {
+      min-height: calc(5 * 1.35 * 17px);
+    }
+  }
+
   &__text {
     width: 100%;
-    flex: 0 1 auto;
+    margin: 0;
     max-height: calc(5 * 1.3 * 20px);
 
     display: -webkit-box;
@@ -644,6 +729,138 @@
       max-height: calc(5 * 1.35 * 17px);
     }
   }
+
+  &__text--measure {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    visibility: hidden;
+    pointer-events: none;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    max-height: none;
+    overflow: visible;
+    height: auto;
+  }
+
+  &__text-more {
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 18px;
+    margin-top: auto;
+    padding-top: 6px;
+    line-height: 0;
+  }
+
+  &__text-trigger {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0 1px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--accent, #3877ee);
+    -webkit-tap-highlight-color: transparent;
+
+    &:hover,
+    &:focus-visible {
+      color: color-mix(in srgb, var(--accent, #3877ee) 82%, #1e293b);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent, #3877ee);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+  }
+
+  &__text-chevron {
+    display: inline-flex;
+    transform: rotate(-90deg) translateY(1px);
+
+    svg {
+      width: 7px;
+      height: 9px;
+    }
+
+    path {
+      stroke: currentcolor;
+    }
+  }
+}
+
+.list__tooltip {
+  position: fixed;
+  z-index: 200;
+  transform: translateX(-50%);
+
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 2px 8px -2px rgba(66, 86, 122, 0.2),
+    0 12px 28px -8px rgba(66, 86, 122, 0.22),
+    0 24px 48px -16px rgba(66, 86, 122, 0.28),
+    0 0 0 1px color-mix(in srgb, var(--accent, #3877ee) 14%, transparent);
+
+  pointer-events: auto;
+  animation: fade-in-text 0.18s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.list__tooltip-scroll {
+  --tooltip-font-size: 17px;
+  --tooltip-line-height: 1.4;
+
+  max-height: calc(
+    5 * var(--tooltip-line-height) * var(--tooltip-font-size) + 24px
+  );
+  padding: 12px 8px 12px 14px;
+  overflow: auto;
+  overscroll-behavior: contain;
+
+  font-weight: 500;
+  font-size: var(--tooltip-font-size);
+  line-height: var(--tooltip-line-height);
+  text-align: center;
+  color: #42567a;
+
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent, #3877ee) 45%, #c5cdd9)
+    transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    margin: 10px 0;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent, #3877ee) 42%, #c5cdd9);
+    background-clip: padding-box;
+  }
+
+  @media (max-width: $md) {
+    --tooltip-font-size: 16px;
+
+    max-height: calc(
+      5 * var(--tooltip-line-height) * var(--tooltip-font-size) + 22px
+    );
+    padding: 11px 6px 11px 12px;
+  }
 }
 
 .slider {
@@ -666,8 +883,8 @@
     overflow: visible;
     padding: 8px 4px 12px;
 
-    &--category-fade {
-      animation: fadeOutText 0.32s ease forwards;
+    @media (max-width: $lg) {
+      min-height: 210px;
     }
 
     @media (min-width: $lg-up) {
@@ -946,6 +1163,9 @@
     position: relative;
     z-index: 102;
 
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
     width: 44px;
     height: 44px;
     padding: 0;
@@ -1056,7 +1276,7 @@
   &__title {
     margin: 0 0 10px;
 
-    font-family: vars.$font-secondary;
+    font-family: vars.$font;
     font-size: 22px;
     font-weight: 700;
     line-height: 1.2;
@@ -1094,6 +1314,9 @@
   }
 
   &__close {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
     height: auto;
     padding: 10px 16px;

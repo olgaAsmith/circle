@@ -1,6 +1,4 @@
-import React from 'react';
-
-const BorderTitle: React.FC = () => {
+function BorderTitle() {
   return (
     <svg
       width={10}
@@ -12,6 +10,6 @@ const BorderTitle: React.FC = () => {
       <path d='M2.5 0L2.5 120' stroke='currentColor' strokeWidth={5} />
     </svg>
   );
-};
+}
 
 export default BorderTitle;

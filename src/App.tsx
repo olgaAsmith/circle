@@ -1,17 +1,16 @@
-import React from 'react';
-import Main from './components/Main';
 import HelpButton from './components/MainPage/HelpButton';
+import Main from './components/Main';
 import './styles/app.scss';
 
-const App: React.FC = () => {
+function App() {
   return (
     <div className='app'>
-      <header></header>
-      <HelpButton />
-      <Main></Main>
-      <footer></footer>
+      <header className='app__header'>
+        <HelpButton />
+      </header>
+      <Main />
     </div>
   );
-};
+}
 
 export default App;

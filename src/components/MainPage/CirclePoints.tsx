@@ -1,14 +1,20 @@
-import { Category } from '@src/utils/consts';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent, WheelEvent } from 'react';
+import {
+  events,
+  getCategoryById,
+  getCategoryIndex,
+  getNeighborCategory,
+} from '@src/utils/consts';
 import CountYear from './CountYear';
 
 interface Props {
   activeCategoryId: number;
   onChangeCategory: (id: number) => void;
-  points: Category[];
-  title: string;
   centerYear: number;
 }
+
+const TARGET_ANGLE = 30;
 
 const getPointerAngle = (
   clientX: number,
@@ -21,90 +27,92 @@ const getPointerAngle = (
   return (standardAngle + 90 + 360) % 360;
 };
 
-const CirclePoints: React.FC<Props> = ({
+function CirclePoints({
   activeCategoryId,
   onChangeCategory,
-  points,
-  title,
   centerYear,
-}) => {
-  const [currentTitle, setCurrentTitle] = useState(title);
-  const isAnimating = title !== currentTitle;
+}: Props) {
+  const activeCategory = getCategoryById(activeCategoryId);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragDelta, setDragDelta] = useState(0);
+  const skipClickRef = useRef(false);
 
   const circleRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{
     startAngle: number;
     moved: boolean;
+    pointerId: number;
   } | null>(null);
   const wheelLockRef = useRef(false);
+  const wheelUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
-  const [orbitRadius, setOrbitRadius] = useState(265);
-  const targetAngle = 30;
+  const activeIndex = getCategoryIndex(activeCategoryId);
+  const step = 360 / events.length;
+  const rotationOffsetRef = useRef(TARGET_ANGLE - activeIndex * step);
+  const prevIndexRef = useRef(activeIndex);
+  const dragDeltaRef = useRef(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const circle = circleRef.current;
     if (!circle) return;
-
-    const updateRadius = () => {
-      const size = circle.getBoundingClientRect().width;
-      setOrbitRadius(Math.max(0, size / 2 - 1));
-    };
-
-    updateRadius();
-
-    const observer = new ResizeObserver(updateRadius);
-    observer.observe(circle);
-
-    return () => observer.disconnect();
+    circle.style.setProperty(
+      '--rotation-offset',
+      `${rotationOffsetRef.current}deg`,
+    );
+    circle.style.setProperty('--drag-delta', '0deg');
   }, []);
-  const activeIndex = points.findIndex(
-    (point) => point.id === activeCategoryId,
-  );
-  const step = 360 / points.length;
 
-  const prevIndexRef = useRef(activeIndex);
-  const [rotationOffset, setRotationOffset] = useState(
-    () => targetAngle - activeIndex * step,
-  );
-
-  useEffect(() => {
-    if (activeIndex === -1) return;
-
+  useLayoutEffect(() => {
     const prevIndex = prevIndexRef.current;
     if (prevIndex === activeIndex) return;
 
-    const count = points.length;
+    const count = events.length;
     let indexDelta = activeIndex - prevIndex;
     while (indexDelta > count / 2) indexDelta -= count;
     while (indexDelta < -count / 2) indexDelta += count;
 
-    setRotationOffset((prev) => prev - indexDelta * step);
+    rotationOffsetRef.current -= indexDelta * step;
     prevIndexRef.current = activeIndex;
-  }, [activeIndex, points.length, step]);
-
-  const rotationWithDrag = rotationOffset + dragDelta;
+    circleRef.current?.style.setProperty(
+      '--rotation-offset',
+      `${rotationOffsetRef.current}deg`,
+    );
+  }, [activeIndex, step]);
 
   useEffect(() => {
-    if (!isAnimating) return;
-
-    const timer = setTimeout(() => {
-      setCurrentTitle(title);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [title, isAnimating]);
+    return () => {
+      if (wheelUnlockTimerRef.current) {
+        clearTimeout(wheelUnlockTimerRef.current);
+      }
+    };
+  }, []);
 
   const changeByStep = (direction: 1 | -1) => {
-    if (activeIndex === -1) return;
-    const nextIndex = (activeIndex + direction + points.length) % points.length;
-    onChangeCategory(points[nextIndex].id);
+    onChangeCategory(getNeighborCategory(activeCategoryId, direction).id);
   };
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    const rect = circleRef.current?.getBoundingClientRect();
-    if (!rect) return;
+  const releaseCapture = (pointerId: number) => {
+    const circle = circleRef.current;
+    if (circle?.hasPointerCapture(pointerId)) {
+      circle.releasePointerCapture(pointerId);
+    }
+  };
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    skipClickRef.current = false;
+
+    const circle = circleRef.current;
+    const rect = circle?.getBoundingClientRect();
+    if (!circle || !rect) return;
+
+    const isPoint =
+      event.target instanceof Element &&
+      Boolean(event.target.closest('.main__point'));
+
+    if (isPoint) return;
+
+    event.preventDefault();
 
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -115,15 +123,19 @@ const CirclePoints: React.FC<Props> = ({
       centerY,
     );
 
-    dragState.current = { startAngle, moved: false };
-    (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+    dragState.current = {
+      startAngle,
+      moved: false,
+      pointerId: event.pointerId,
+    };
   };
 
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!dragState.current) return;
 
-    const rect = circleRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const circle = circleRef.current;
+    const rect = circle?.getBoundingClientRect();
+    if (!circle || !rect) return;
 
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -139,26 +151,34 @@ const CirclePoints: React.FC<Props> = ({
     if (delta < -180) delta += 360;
 
     if (Math.abs(delta) > 2) {
-      dragState.current.moved = true;
-      setIsDragging(true);
+      if (!dragState.current.moved) {
+        dragState.current.moved = true;
+        setIsDragging(true);
+        circle.setPointerCapture(event.pointerId);
+      }
     }
 
     if (dragState.current.moved) {
-      setDragDelta(delta);
+      dragDeltaRef.current = delta;
+      circle.style.setProperty('--drag-delta', `${delta}deg`);
     }
   };
 
-  const finishDrag = () => {
+  const finishDrag = (event: PointerEvent<HTMLDivElement>) => {
     if (!dragState.current) return;
 
+    releaseCapture(event.pointerId);
+
     if (dragState.current.moved) {
+      skipClickRef.current = true;
+      const rotationWithDrag = rotationOffsetRef.current + dragDeltaRef.current;
       let closestIndex = activeIndex;
       let closestDiff = Infinity;
 
-      points.forEach((_, index) => {
+      events.forEach((_, index) => {
         const absoluteAngle =
           (step * index + rotationWithDrag + 360 * 10) % 360;
-        let diff = Math.abs(absoluteAngle - targetAngle);
+        let diff = Math.abs(absoluteAngle - TARGET_ANGLE);
         if (diff > 180) diff = 360 - diff;
 
         if (diff < closestDiff) {
@@ -167,117 +187,98 @@ const CirclePoints: React.FC<Props> = ({
         }
       });
 
-      if (points[closestIndex]) {
-        onChangeCategory(points[closestIndex].id);
+      const closest = events[closestIndex];
+      if (closest) {
+        onChangeCategory(closest.id);
       }
     }
 
     dragState.current = null;
+    dragDeltaRef.current = 0;
+    circleRef.current?.style.setProperty('--drag-delta', '0deg');
     setIsDragging(false);
-    setDragDelta(0);
   };
 
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
     if (wheelLockRef.current) return;
     if (Math.abs(event.deltaY) < 8) return;
 
     wheelLockRef.current = true;
     changeByStep(event.deltaY > 0 ? 1 : -1);
 
-    setTimeout(() => {
+    wheelUnlockTimerRef.current = setTimeout(() => {
       wheelLockRef.current = false;
+      wheelUnlockTimerRef.current = null;
     }, 450);
   };
 
-  const handleCircleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      event.stopPropagation();
-      changeByStep(1);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      event.stopPropagation();
-      changeByStep(-1);
+  const handlePointClick = (id: number) => {
+    if (skipClickRef.current) {
+      skipClickRef.current = false;
+      return;
     }
-  };
-
-  const handlePointKeyDown = (
-    event: React.KeyboardEvent<HTMLSpanElement>,
-    id: number,
-  ) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onChangeCategory(id);
-    }
+    onChangeCategory(id);
   };
 
   return (
-    <div>
+    <div className="main__circle-stage">
       <span
-        className={`main__point-text ${isAnimating ? 'main__point-text--fade' : ''}`}
-        aria-hidden='true'
+        key={activeCategory.title}
+        className="main__point-text"
+        aria-hidden="true"
       >
-        {currentTitle}
+        {activeCategory.title}
       </span>
-      <span className='visually-hidden' aria-live='polite'>
-        {`Выбрана категория: ${currentTitle}`}
+      <span className="visually-hidden" aria-live="polite">
+        {`Выбрана категория: ${activeCategory.title}`}
       </span>
       <div
         ref={circleRef}
-        className={`main__circle main__circle--interactive ${isDragging ? 'main__circle--dragging' : ''}`}
-        style={{
-          transform: `translate(-50%, -50%)`,
-        }}
-        role='group'
-        aria-label='Колесо категорий. Стрелки вверх и вниз, колесо мыши или перетаскивание переключают категорию'
+        className={`main__wheel ${isDragging ? 'main__wheel--dragging' : ''}`}
+        role="group"
+        aria-label="Колесо категорий. Колесо мыши или перетаскивание переключают категорию"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}
         onPointerCancel={finishDrag}
         onWheel={handleWheel}
-        onKeyDown={handleCircleKeyDown}
       >
-        <span className='main__circle-year' aria-hidden='true'>
+        <span className="main__circle-year" aria-hidden="true">
           <CountYear value={centerYear} />
         </span>
-        <span className='visually-hidden' aria-live='polite'>
+        <span className="visually-hidden" aria-live="polite">
           {`Текущая дата: ${centerYear}`}
         </span>
-        {points.map((point, index) => {
-          const angle = step * index;
+        {events.map((point, index) => {
           const isActive = activeCategoryId === point.id;
 
-          const absoluteAngle = angle + rotationWithDrag;
-
           return (
-            <span
+            <button
               key={point.id}
+              type="button"
               className={`main__point main__point--orbital ${isActive ? 'main__point--active' : ''}`}
               style={
                 {
-                  '--angle': `${absoluteAngle}deg`,
-                  '--radius': `${orbitRadius}px`,
+                  '--base-angle': `${step * index}deg`,
                   '--point-color': point.color,
-                } as React.CSSProperties
+                } as CSSProperties
               }
-              onClick={() => onChangeCategory(point.id)}
-              onKeyDown={(event) => handlePointKeyDown(event, point.id)}
-              role='button'
-              tabIndex={0}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={() => handlePointClick(point.id)}
               aria-pressed={isActive}
-              aria-label={`Категория «${point.title}», ${point.start}\u2013${point.end}`}
+              aria-label={`Категория «${point.title}»`}
             >
               {!isActive && (
-                <span className='main__point-tooltip' role='tooltip'>
+                <span className="main__point-tooltip" role="tooltip">
                   {point.title}
                 </span>
               )}
-            </span>
+            </button>
           );
         })}
       </div>
     </div>
   );
-};
+}
 
 export default CirclePoints;
