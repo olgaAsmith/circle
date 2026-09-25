@@ -881,14 +881,20 @@
   &__viewport {
     width: 100%;
     overflow: visible;
-    padding: 8px 4px 12px;
+    padding: 8px 4px 4px;
 
     @media (max-width: $lg) {
       min-height: 210px;
     }
 
     @media (min-width: $lg-up) {
-      padding: 8px 6px 12px;
+      padding: 8px 6px 4px;
+    }
+
+    .list__item {
+      box-shadow:
+        0 10px 22px -14px rgba(66, 86, 122, 0.32),
+        0 18px 36px -22px rgba(66, 86, 122, 0.18);
     }
   }
 
@@ -902,11 +908,11 @@
     gap: 8px;
     width: 100%;
     margin: 0;
-    padding: 4px 8px 8px;
+    padding: 10px 8px 8px;
 
     @media (max-width: $md) {
       gap: 7px;
-      padding: 2px 4px 6px;
+      padding: 8px 4px 6px;
     }
 
     > button {
@@ -916,56 +922,70 @@
   }
 
   &__dot {
-    --dot-size: 12px;
+    --dot-core: 10px;
+    --dot-slot: 18px;
 
+    position: relative;
     display: block;
-    flex: 0 0 var(--dot-size);
+    flex: 0 0 var(--dot-slot);
     flex-shrink: 0;
     flex-grow: 0;
-    width: var(--dot-size);
-    height: var(--dot-size);
-    min-width: var(--dot-size);
-    max-width: var(--dot-size);
-    min-height: var(--dot-size);
-    max-height: var(--dot-size);
+    width: var(--dot-slot);
+    height: var(--dot-slot);
+    min-width: var(--dot-slot);
+    max-width: var(--dot-slot);
+    min-height: var(--dot-slot);
+    max-height: var(--dot-slot);
     padding: 0;
     margin: 0;
 
     border: none;
     border-radius: 50%;
-    background-color: #42567a;
-    background-image: none;
-    box-shadow: none;
-    opacity: 0.35;
+    background: transparent;
     cursor: pointer;
     line-height: 0;
     font-size: 0;
     appearance: none;
     -webkit-tap-highlight-color: transparent;
 
-    transition:
-      background-color 0.3s ease,
-      opacity 0.2s ease,
-      box-shadow 0.2s ease;
-
-    @media (max-width: $lg) {
-      width: var(--dot-size);
-      height: var(--dot-size);
-      min-width: var(--dot-size);
-      max-width: var(--dot-size);
-      min-height: var(--dot-size);
-      max-height: var(--dot-size);
+    &::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: var(--dot-core);
+      height: var(--dot-core);
+      border-radius: 50%;
+      background-color: #42567a;
+      opacity: 0.35;
+      transform: translate(-50%, -50%);
+      transition:
+        background-color 0.3s ease,
+        opacity 0.2s ease;
     }
 
-    &:hover {
+    &:hover::before {
       opacity: 0.7;
     }
 
-    &--active {
+    &--active::before {
       opacity: 1;
       background-color: var(--accent, #42567a);
-      box-shadow: 0 0 0 2px
+    }
+
+    &--active::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      box-sizing: border-box;
+      width: calc(var(--dot-core) + 4px);
+      height: calc(var(--dot-core) + 4px);
+      border: 2px solid
         color-mix(in srgb, var(--accent, #42567a) 35%, transparent);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
     }
   }
 
